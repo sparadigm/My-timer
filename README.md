@@ -1,0 +1,2 @@
+# pomodoro-timer
+python/tkinterでのポモドーロタイマー
