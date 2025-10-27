@@ -6,9 +6,9 @@ from My_timer import MyTimer
 def main():
     root = tk.Tk()
 
-    root.title("集中用タイマー")
+    root.title("MyTimer")
     root.geometry("350x250")
-    root.resizable(False, False)
+    #root.resizable(False, False)
     style = ttk.Style()
     style.theme_use('clam')
     app = MyTimer(master = root)

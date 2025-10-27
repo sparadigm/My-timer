@@ -15,5 +15,17 @@ python/tkinterでの勉強用タイマー
 root.resizable(False, False)
 (横幅, 縦幅)の変更制限
 
+expand
+Trueにすると、残っている領域を占有する
+
 super()
 親クラスを継承する
+
+pacK()
+fill: ウィジェットが空いているスペースを埋めるかどうか指定
+
+tkinter.DISABLED
+（ボタンウィジェット、state属性）ボタンの無効化、押せなくなる
+
+tkinter.NORMAL
+（ボタンウィジェット、state属性）ボタンの有効化
