@@ -7,7 +7,7 @@ def main():
     root = tk.Tk()
 
     root.title("MyTimer")
-    root.geometry("350x250")
+    root.geometry("450x350")
     #root.resizable(False, False)
     style = ttk.Style()
     style.theme_use('clam')

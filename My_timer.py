@@ -9,33 +9,84 @@ class MyTimer(ttk.Frame):
         # （rootはトップレベルウィンドウ）MyTimerというFrameがrootを親として作成される
         self.master = master
 
-        self.pack(fill = "both")
+        self.pack(fill = "both", expand = True)
 
         self.timer_running = False # False: 止まっている, True: 起動中
-        self.time_left = 25 * 60
+        
         self.timer_id = None # after関数の返り値（文字列、予約を識別するためのID）を格納。予約のキャンセルのために使用
+
+        self.var_scaleminute = tk.IntVar(value = 25) # 時間設定を変更する際に使うウィジェット変数
+        self.var_scaleminute.trace_add("write", self.scale_change)
+
+        self.time_left = self.var_scaleminute.get() * 60
+        self.style = ttk.Style()
+        self.style.configure(
+            "inorde.TButton",
+            font = ("", 12, "bold"),
+            padding = [-32, -2]
+        )
+        self.style.configure(
+            "vlmbar.Horizontal.TScale",
+        )
 
         self.create_widgets()
         self.update_timer_display()
 
     def create_widgets(self):
+        self.center_frame = ttk.Frame(self) # ウィジェットを中央に配置するためのframe
+        self.center_frame.pack(expand = True)
+
         self.timer_label = ttk.Label(
-            self, 
+            self.center_frame, 
             text = "", 
             font = ("", 60))
-        self.timer_label.pack(pady = 10)
+        self.timer_label.pack()
 
         button_frame = ttk.Frame(
-            self, 
-            padding = (0, 10))
-        button_frame.pack(fill = 'x')
+            self.center_frame, 
+            padding = (0, 10)
+        )
+        button_frame.pack()
+
+        time_setting = ttk.Frame(
+            self.center_frame,
+            padding = (0, 10)
+        )
+        time_setting.pack()
+
+        self.time_decrease = ttk.Button(
+            time_setting,
+            text = '-',
+            style = "inorde.TButton", # ttkではheight, widthを持てないので、styleで指定
+            command = self.decrement_time
+        )
+        self.time_decrease.pack(side = "left")
+
+        self.time_scale = ttk.Scale(
+            time_setting,
+            orient = tk.HORIZONTAL,
+            from_ = 1,
+            to = 60,
+            style = "vlmbar.Horizontal.TScale",
+            length = 150,
+            variable = self.var_scaleminute
+        )
+        self.time_scale.pack(side = "left", padx = 10)
+
+        self.time_increase = ttk.Button(
+            time_setting,
+            text = "+",
+            style = "inorde.TButton",
+            command = self.increment_time
+        )
+        self.time_increase.pack(side = "left")
 
         self.start_pause_button = ttk.Button(
             button_frame,
             text = "start",
             command = self.start_pause
         )
-        self.start_pause_button.pack(side = "left", fill = "x", expand = True, padx = 5)
+        self.start_pause_button.pack(side = "left", fill = "x", padx = 5)
 
         self.reset_button = ttk.Button(
             button_frame,
@@ -51,9 +102,35 @@ class MyTimer(ttk.Frame):
         # INFO: configメソッド -> 実行したウィジェットの設定を変更 （config = configure）
         # INFO: f-strings 0埋め ex){minutes:02} -> 表示する桁数を2桁（右）、0で残りを埋める（左）
 
+    def scale_change(self, *args):
+        if not self.timer_running:
+            try:
+                self.time_left = self.var_scaleminute.get() * 60
+                self.update_timer_display()
+            except tk.TclError:
+                pass
+
+    def increment_time(self):
+        current_time = self.var_scaleminute.get()
+        if current_time < 60:
+            self.var_scaleminute.set(current_time + 1)
+            print("時間が1分増えました")
+        else:
+            print("これ以上増やせません")
+            #TODO: 警告するポップアップを作成
+
+    def decrement_time(self):
+        current_time = self.var_scaleminute.get()
+        if current_time > 1:
+            self.var_scaleminute.set(current_time - 1)
+            print("時間が1分減りました")
+        else:
+            print("これ以上減らせません")
+            #TODO: 警告するポップアップを作成
+
     def start_pause(self):
         print("タイマー開始")
-        # TODO: ボタンの状態変更、カウントダウンの開始
+        # TODO: ボタンの状態変更
         if self.timer_running:
             self.timer_running = False
             if self.timer_id:
