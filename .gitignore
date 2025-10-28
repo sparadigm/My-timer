@@ -5,6 +5,7 @@ __pycache__/
 *.pyc
 
 test.py
+note.txt
 
 # Windows
 *.log
