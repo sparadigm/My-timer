@@ -8,17 +8,19 @@ class MyTimer(ttk.Frame):
         # INFO: main.pyでapp = MyTimer(master = root)としているので
         # （rootはトップレベルウィンドウ）MyTimerというFrameがrootを親として作成される
         self.master = master
-
         self.pack(fill = "both", expand = True)
 
-        self.timer_running = False # False: 止まっている, True: 起動中
-        
+        self.current_mode = "work" # 作業時: work, 休憩時: break
+
+        self.timer_running = False # False: 停止, True: 動作中
         self.timer_id = None # after関数の返り値（文字列、予約を識別するためのID）を格納。予約のキャンセルのために使用
 
         self.var_scaleminute = tk.IntVar(value = 25) # 時間設定を変更する際に使うウィジェット変数
-        self.var_scaleminute.trace_add("write", self.scale_change)
+        self.var_breakminute = tk.IntVar(value = 5) # 休憩時間
+        self.var_scaleminute.trace_add("write", self.scale_change) # 変数の値が変更されたとき、自動でscale_change
 
-        self.time_left = self.var_scaleminute.get() * 60
+        self.time_left = self.var_scaleminute.get() * 60 # 作業時間
+        
         self.style = ttk.Style()
         self.style.configure(
             "inorde.TButton",
@@ -28,7 +30,10 @@ class MyTimer(ttk.Frame):
         self.style.configure(
             "vlmbar.Horizontal.TScale",
         )
-
+        self.style.configure(
+            "Status.TLabel",
+            font = ("", 25, "bold")
+        )
         self.create_widgets()
         self.update_timer_display()
 
@@ -36,7 +41,14 @@ class MyTimer(ttk.Frame):
         self.center_frame = ttk.Frame(self) # ウィジェットを中央に配置するためのframe
         self.center_frame.pack(expand = True)
 
-        self.timer_label = ttk.Label(
+        self.status_label = ttk.Label( # 作業中 - 休憩中を表示するlabel
+            self.center_frame,
+            text = "work",
+            style = "Status.TLabel"
+        )
+        self.status_label.pack(pady = (0, 12)) # pady = (上, 下)
+
+        self.timer_label = ttk.Label( # 残り時間表示
             self.center_frame, 
             text = "", 
             font = ("", 60))
@@ -48,7 +60,7 @@ class MyTimer(ttk.Frame):
         )
         button_frame.pack()
 
-        time_setting = ttk.Frame(
+        time_setting = ttk.Frame( # 時間設定用をtime_settingにまとめる
             self.center_frame,
             padding = (0, 10)
         )
@@ -94,6 +106,16 @@ class MyTimer(ttk.Frame):
             command = self.reset_timer
         )
         self.reset_button.pack(side = "left", fill = "x", expand = True, padx = 5)
+
+
+    def change_status(self):
+        if self.current_mode == "break":
+            self.current_mode = "work"
+            self.status_label.config(text = "work")
+        else:
+            self.current_mode = "break"
+            self.status_label.config(text = "break")
+        self.status_label.config(text = self.current_mode)
 
     def update_timer_display(self):
         minutes = self.time_left // 60
@@ -148,16 +170,31 @@ class MyTimer(ttk.Frame):
             self.after_cancel(self.timer_id)
             self.timer_id = None
         self.timer_running = False
-        self.time_left = 25 * 60
+        self.time_left = self.var_scaleminute.get() * 60
         self.update_timer_display()
         self.start_pause_button.config(text = "start")
+        self.current_mode = "work" # リセットされたら強制的にworkモード
+        self.status_label.config(text = self.current_mode)
         print("タイマーリセット")
 
     def countdown(self):
-        # TODO: 1秒減らす、表示更新
+        if not self.timer_running:
+            return
+        # NOTE: 停止ボタンを押した時点で-1されるのを防止
+        self.update_timer_display()
+        if self.time_left <= 0:
+            self.finish_phase()
+            return
         self.time_left -= 1
-        if self.time_left > 0:
-            self.update_timer_display()
-            self.timer_id = self.after(1000, self.countdown)
+        self.timer_id = self.after(1000, self.countdown)
+
+    def finish_phase(self):
+        self.change_status()
+        if self.current_mode == "work":
+            self.time_left = self.var_scaleminute.get() * 60
         else:
-            self.update_timer_display()
+            self.time_left = self.var_breakminute.get() * 60
+        self.update_timer_display()
+        self.timer_id = None
+        self.timer_running = False
+        self.start_pause()
