@@ -19,7 +19,10 @@ class MyTimer(ttk.Frame):
         self.var_breakminute = tk.IntVar(value = 5) # 休憩時間（分）
         self.var_scaleminute.trace_add("write", self.scale_change) # 変数の値が変更されたとき、自動でscale_change
 
-        self.var_ismuted = tk.BooleanVar(value = False)
+        self.var_ismuted = tk.BooleanVar(value = False) # ミュート用
+        self.var_isfront = tk.BooleanVar(value = False) # 前面表示用
+        self.apply_front()
+
         self.time_left = self.var_scaleminute.get() * 60 # 作業時間（秒）
 
         self.style = ttk.Style()
@@ -115,6 +118,16 @@ class MyTimer(ttk.Frame):
         )
         self.mute_button.pack()
 
+        self.front_button = ttk.Checkbutton(
+            button_frame,
+            text = "Front",
+            variable = self.var_isfront,
+            command = self.apply_front
+        )
+        self.front_button.pack()
+
+    def apply_front(self):
+        self.master.attributes("-topmost", bool(self.var_isfront.get()))
 
     def change_status(self):
         if self.current_mode == "break":
