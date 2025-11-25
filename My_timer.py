@@ -4,8 +4,8 @@ from tkinter import ttk
 class MyTimer(ttk.Frame):
     def __init__(self, master):
         super().__init__(master, padding = (20, 10))
-        # INFO: super() 
-        # INFO: main.pyでapp = MyTimer(master = root)としているので
+        #INFO: super() 
+        #INFO: main.pyでapp = MyTimer(master = root)としているので
         # （rootはトップレベルウィンドウ）MyTimerというFrameがrootを親として作成される
         self.master = master
         self.pack(fill = "both", expand = True)
@@ -15,12 +15,13 @@ class MyTimer(ttk.Frame):
         self.timer_running = False # False: 停止, True: 動作中
         self.timer_id = None # after関数の返り値（文字列、予約を識別するためのID）を格納。予約のキャンセルのために使用
 
-        self.var_scaleminute = tk.IntVar(value = 25) # 時間設定を変更する際に使うウィジェット変数
-        self.var_breakminute = tk.IntVar(value = 5) # 休憩時間
+        self.var_scaleminute = tk.IntVar(value = 25) # 時間設定を変更する際に使うウィジェット変数（分）
+        self.var_breakminute = tk.IntVar(value = 5) # 休憩時間（分）
         self.var_scaleminute.trace_add("write", self.scale_change) # 変数の値が変更されたとき、自動でscale_change
 
-        self.time_left = self.var_scaleminute.get() * 60 # 作業時間
-        
+        self.var_ismuted = tk.BooleanVar(value = False)
+        self.time_left = self.var_scaleminute.get() * 60 # 作業時間（秒）
+
         self.style = ttk.Style()
         self.style.configure(
             "inorde.TButton",
@@ -107,6 +108,13 @@ class MyTimer(ttk.Frame):
         )
         self.reset_button.pack(side = "left", fill = "x", expand = True, padx = 5)
 
+        self.mute_button = ttk.Checkbutton(
+            button_frame,
+            text = "Mute",
+            variable = self.var_ismuted
+        )
+        self.mute_button.pack()
+
 
     def change_status(self):
         if self.current_mode == "break":
@@ -181,10 +189,16 @@ class MyTimer(ttk.Frame):
         if not self.timer_running:
             return
         # NOTE: 停止ボタンを押した時点で-1されるのを防止
-        self.update_timer_display()
+        if self.var_ismuted.get() != True and 1 <= self.time_left <= 3:
+            try:
+                self.bell()
+            except Exception:
+                pass
+
         if self.time_left <= 0:
             self.finish_phase()
             return
+        self.update_timer_display()
         self.time_left -= 1
         self.timer_id = self.after(1000, self.countdown)
 
