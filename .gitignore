@@ -9,6 +9,7 @@ note.txt
 unmute.xcf
 mute.png
 unmute.png
+.mytimer_state.json
 
 # Windows
 *.log
