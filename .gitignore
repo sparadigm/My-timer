@@ -10,6 +10,10 @@ unmute.xcf
 mute.png
 unmute.png
 .mytimer_state.json
+testDB.py
+sample.db
+test
+my_timer.db
 
 # Windows
 *.log

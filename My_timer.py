@@ -1,5 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
+import time
+from db import insert_session
 
 class MyTimer(ttk.Frame):
     def __init__(self, master):
@@ -24,6 +26,9 @@ class MyTimer(ttk.Frame):
         self.apply_front()
 
         self.time_left = self.var_scaleminute.get() * 60 # 作業時間（秒）
+
+        self.session_start = None # 記録用の開始時間
+        self.session_mode = None
 
         self.style = ttk.Style()
         self.style.configure(
@@ -126,6 +131,13 @@ class MyTimer(ttk.Frame):
         )
         self.front_button.pack()
 
+        self.chart_button = ttk.Button(
+            button_frame,
+            text = "graph",
+            command = self.on_show_chart
+        )
+        self.chart_button.pack(side = "left", padx = 5)
+
     def apply_front(self):
         self.master.attributes("-topmost", bool(self.var_isfront.get()))
 
@@ -175,6 +187,7 @@ class MyTimer(ttk.Frame):
         print("タイマー開始")
         # TODO: ボタンの状態変更
         if self.timer_running:
+            self.log_session()
             self.timer_running = False
             if self.timer_id:
                 self.after_cancel(self.timer_id)
@@ -183,6 +196,9 @@ class MyTimer(ttk.Frame):
         else:
             self.timer_running = True
             self.start_pause_button.config(text = "pause")
+            if self.current_mode == "work":
+                self.session_start = time.time()
+                self.session_mode = "work"
             self.countdown()
 
     def reset_timer(self):
@@ -196,6 +212,10 @@ class MyTimer(ttk.Frame):
         self.start_pause_button.config(text = "start")
         self.current_mode = "work" # リセットされたら強制的にworkモード
         self.status_label.config(text = self.current_mode)
+        
+        self.log_session()
+        self.session_start = None
+        self.session_mode = None
         print("タイマーリセット")
 
     def countdown(self):
@@ -216,6 +236,7 @@ class MyTimer(ttk.Frame):
         self.timer_id = self.after(1000, self.countdown)
 
     def finish_phase(self):
+        self.log_session()
         self.change_status()
         if self.current_mode == "work":
             self.time_left = self.var_scaleminute.get() * 60
@@ -225,3 +246,28 @@ class MyTimer(ttk.Frame):
         self.timer_id = None
         self.timer_running = False
         self.start_pause()
+
+    def log_session(self):
+        if self.session_start is not None and self.session_mode == "work":
+            end_ts = time.time()
+            insert_session(self.session_start, end_ts, "work")
+        self.session_start = None
+        self.session_mode = None
+
+    def on_show_chart(self, days = 14):
+        from charts import show_daily_minutes
+        from db import get_conn
+        with get_conn() as conn:
+            cur = conn.execute("""
+                SELECT date(datetime(start_ts, "unixepoch", "localtime")) AS day,
+                               SUM(end_ts - start_ts) / 60.0 AS minutes
+                FROM session
+                WHERE mode = "work"
+                GROUP BY day
+                ORDER BY day DESC
+                LIMIT ?
+                """, (days,))
+            rows = cur.fetchall()
+        
+        rows.reverse()
+        show_daily_minutes(self.master, rows, title = f"work per day (last {days})")
