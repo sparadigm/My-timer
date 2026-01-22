@@ -20,7 +20,7 @@ def load_state(root, app):
 
     if "topmost" in obj:
         app.var_isfront.set(bool(obj["topmost"]))
-        root.after(0, app.apply_front)
+        root.after(1, app.apply_front)
         # INFO: レイアウト確定後、ウィンドウが画面に出るタイミングでgeometry
     
     if "work_minutes" in obj:
